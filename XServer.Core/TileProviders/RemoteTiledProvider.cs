@@ -4,6 +4,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Ptv.XServer.Controls.Map.Layers.Tiled;
 using Ptv.XServer.Controls.Map.Tools;
 
@@ -22,27 +24,27 @@ namespace Ptv.XServer.Controls.Map.TileProviders
         }
 
         /// <inheritdoc/>
-        public Stream GetImageStream(int tileX, int tileY, int zoom)
+        public async Task<Stream> GetImageStream(int tileX, int tileY, int zoom, CancellationToken ct)
         {
-            try { return ReadURL(RequestBuilderDelegate(tileX, tileY, zoom)); }
-            catch (Exception exception) { return TileExceptionHandler.RenderException(exception, 256, 256); }
+            return await ReadURL(RequestBuilderDelegate(tileX, tileY, zoom), ct);
         }
 
         /// <summary> Reads the content from a given url and returns it as a stream. </summary>
         /// <param name="url"> The url to look for. </param>
         /// <returns> The url content as a stream. </returns>
-        public Stream ReadURL(string url)
+        public async Task<Stream> ReadURL(string url, CancellationToken ct)
         {
             try
             {
-                var b = httpClient.GetAsync(url).Result;
-                return b.Content.ReadAsStreamAsync().Result;
-
+                var b = await httpClient.GetAsync(url, HttpCompletionOption.ResponseContentRead, ct);
+                if (b.StatusCode != System.Net.HttpStatusCode.OK)
+                    return null;
+                else
+                    return await b.Content.ReadAsStreamAsync();
             }
-            catch (Exception exception)
+            catch (TaskCanceledException)
             {
-                logger.Writeline(TraceEventType.Error, url + ":" + Environment.NewLine + exception.Message);
-                throw;
+                return null;
             }
         }
 

@@ -151,8 +151,6 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// <inheritdoc/>  
         public override void Dispose()
         {
-            StopBackgroundWorker();
-
             base.Dispose();
         }
         #endregion
@@ -206,42 +204,49 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         }
         #endregion
 
+        private Dictionary<TileParam, CancellationTokenSource> tileTokens = new Dictionary<TileParam, CancellationTokenSource>();
+
         #region private methods
         /// <summary> Start worker thread for retrieving the tiles from the tile provider. </summary>
-        private void GetTiles()
+        private async Task GetTiles()
         {
-            StopBackgroundWorker();
+            //StopBackgroundWorker();
 
             var mapParam = new MapParam(MapView, GetTileZoom());
 
             currentlyVisibleTiles = new HashSet<TileParam>(GetVisibleTiles(mapParam));
             currentlyVisibleTiles.ExceptWith(new HashSet<TileParam>(shownImages.Keys));
 
+            //((TileProviders.RemoteTiledProvider)tiledProvider).httpClient.CancelPendingRequests();
             if (MapView.Printing)
             {
                 foreach (var tileParam in GetVisibleTiles(mapParam))
                 {
-                    GetImage(tileParam, out var buffer);
+                    var buffer = await GetImage(tileParam, new CancellationToken());
                     DisplayImage(buffer, tileParam, false, true);
                     RemoveRestOfTiles();
                 }
             }
             else
             {
-                worker = new BackgroundWorker();
-                worker.DoWork += Worker_DoWork;
-                worker.WorkerSupportsCancellation = true;
-                worker.RunWorkerAsync(currentlyVisibleTiles);
-            }
-        }
+                var tokenstoCancel = new HashSet<TileParam>(tileTokens.Keys);
+                tokenstoCancel.ExceptWith(currentlyVisibleTiles.ToList());
+                foreach (var ttk in tokenstoCancel)
+                {
+                    tileTokens[ttk].CancelAfter(250);
+                    tileTokens.Remove(ttk);
+                }
 
-        private void StopBackgroundWorker()
-        {
-            if (worker == null) return;
-            
-            worker.CancelAsync();
-            worker.DoWork -= Worker_DoWork;
-            worker = null;
+                var tilesToLoad = currentlyVisibleTiles.Except(tileTokens.Keys);
+                foreach(var vt in tilesToLoad)
+                {
+                    var cts = new CancellationTokenSource();
+                    tileTokens[vt] = cts;
+                    await LoadImage(vt, cts.Token);
+                    CancellationTokenSource ct;
+                    tileTokens.Remove(vt); //Dispose?
+                }
+            }
         }
 
         private void RemoveTilesWithDifferentZoom()
@@ -439,26 +444,32 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         {
             if (!(e.Argument is IEnumerable<TileParam> tileParams)) return;
 
+            List<Task> tasks = new List<Task>();
             foreach (var tileParam in tileParams)
             {
                 if (((BackgroundWorker)sender).CancellationPending)
                 {
                     e.Result = null;
+                    //cts.Cancel();
                     return;
                 }
 
-                if (UseThreading)
-                {
-                    Task.Run(() => LoadImage(tileParam));
-                    // new Thread(new ParameterizedThreadStart(LoadImage)).Start(tile);
-                    //ThreadPool.QueueUserWorkItem(new WaitCallback(LoadImage), new object[] { tileParam });
-                    //threadPool.PostRequest(new Action<TileParam>(LoadImage), new object[] { tileParam });
-                }
-                else
-                {
-                    LoadImage(tileParam); // single threaded for debugging
-                }
+                //tasks.Add(LoadImage(tileParam, cts.Token));
+                
+                //if (UseThreading)
+                //{
+                //    Task.Run(() => LoadImage(tileParam));
+                //    // new Thread(new ParameterizedThreadStart(LoadImage)).Start(tile);
+                //    //ThreadPool.QueueUserWorkItem(new WaitCallback(LoadImage), new object[] { tileParam });
+                //    //threadPool.PostRequest(new Action<TileParam>(LoadImage), new object[] { tileParam });
+                //}
+                //else
+                //{
+                //    LoadImage(tileParam); // single threaded for debugging
+                //}
             }
+
+//            Task.WaitAll(tasks.ToArray(), cts.Token);
         }
 
         /// <summary>
@@ -564,7 +575,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// <param name="tileKey"> Tile which is to be read out as an image. </param>
         /// <param name="buffer"> The buffer containing the image data or null if the image was not found. </param>
         /// <returns> True if the image was found in the cache, false otherwise. </returns>
-        private bool GetImage(TileParam tileKey, out byte[] buffer)
+        private async Task<byte[]> GetImage(TileParam tileKey, CancellationToken ct)
         {
             // don't use memory-cache if the provider returns an empty CacheId
             var useTileCache = !string.IsNullOrEmpty(tiledProvider.CacheId);
@@ -572,34 +583,36 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
             //if (useTileCache && tileCache.TryGetValue(cacheKey, out buffer))
             //    return true;
    
-            try
-            {
-                using (var stream = tiledProvider.GetImageStream(tileKey.TileX, tileKey.TileY, tileKey.Zoom))
+            //try
+            //{
+                using (var stream = await tiledProvider.GetImageStream(tileKey.TileX, tileKey.TileY, tileKey.Zoom, ct))
                 {
-                    buffer = stream?.GetBytes();
+                    return stream?.GetBytes();
 
                     //if(useTileCache)
                     //    tileCache.AddValue(cacheKey, buffer);
                 }
-            }
-            catch { buffer = null; } // should handle web exception gracefully here 
+            //}
+            //catch { return null; } // should handle web exception gracefully here 
             //finally { if(useTileCache) tileCache.UnlockKey(cacheKey); }
-
-            return false;
         }
         /// <summary>
         /// Loads an image of a certain tile and shows it on the canvas.
         /// </summary>
         /// <param name="tileParam"> Tile to be shown on the image. </param>
         /// <param name="forceTile"> Flag indicating that the image has to be reloaded even if the content might be the same. </param>
-        private void LoadImage(TileParam tileParam, bool forceTile)
+        private async Task LoadImage(TileParam tileParam, bool forceTile, CancellationToken ct)
         {
+            if (ct.IsCancellationRequested)
+                return;
+
             if (!(forceTile || currentlyVisibleTiles.Contains(tileParam)))
             {
                 return;
             }
 
-            bool cached = GetImage(tileParam, out var buffer);
+            var buffer = await GetImage(tileParam, ct);
+            bool cached = false; // in-memory cache not implemented
 
             int x = tileParam.TileX;
             int y = tileParam.TileY;
@@ -607,15 +620,15 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
 
             if (buffer == null && zoom > tiledProvider.MinZoom)
             {
-                LoadImage(new TileParam(x / 2, y / 2, zoom - 1, tiledProvider.CacheId), true);
+                await LoadImage(new TileParam(x / 2, y / 2, zoom - 1, tiledProvider.CacheId), true, ct);
             }
 
             // only animate if the tile is not in the cache or the zoom level changed
             bool animate = (!cached || lastZoom == -1 || lastZoom != zoom) && UseAnimation;
 
-            if (buffer != null)
+            if (buffer != null && !ct.IsCancellationRequested)
             {
-                Dispatcher.BeginInvoke(new Action<byte[], TileParam, bool, bool>(DisplayImage), buffer, tileParam, animate, forceTile);
+                await Dispatcher.BeginInvoke(new Action<byte[], TileParam, bool, bool>(DisplayImage), buffer, tileParam, animate, forceTile);
             }
         }
 
@@ -623,10 +636,10 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// Loads the image of a certain tile and shows it on the canvas. The tile is entered of type object.
         /// </summary>
         /// <param name="stateInfo"> Tile of type object. </param>
-        private void LoadImage(object stateInfo)
+        private async Task LoadImage(object stateInfo, CancellationToken ct)
         {
             var tileParam = stateInfo as TileParam;
-            LoadImage(tileParam, false);
+            await LoadImage(tileParam, false, ct);
         }
         #endregion
 
@@ -736,7 +749,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// <param name="y"> Y tile. </param>
         /// <param name="zoom"> Zoom level. </param>
         /// <returns> The stream containing the map image. </returns>
-        Stream GetImageStream(int x, int y, int zoom);
+        Task<Stream> GetImageStream(int x, int y, int zoom, CancellationToken ct);
 
         /// <summary> Gets the cache id used to cache the tiled map. </summary>
         string CacheId { get; }

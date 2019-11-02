@@ -60,7 +60,7 @@ namespace XServer.Core.Test
             };
             ShapeCanvas.SetLocation(pin, myLocation);
             ShapeCanvas.SetAnchor(pin, LocationAnchor.RightBottom);
-            ShapeCanvas.SetScaleFactor(pin, 0.125);
+            ShapeCanvas.SetScaleFactor(pin, 0.1);
             Panel.SetZIndex(pin, 100);
             myLayer.Shapes.Add(pin);
 
