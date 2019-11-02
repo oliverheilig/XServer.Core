@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Media;
 using Ptv.XServer.Controls.Map.Tools;
 using Ptv.XServer.Controls.Map.Canvases;
-//using Ptv.Components.Projections;
 
 namespace Ptv.XServer.Controls.Map.Layers.Shapes
 {
@@ -34,6 +33,12 @@ namespace Ptv.XServer.Controls.Map.Layers.Shapes
         /// the shapes are only updated at the end of the viewport transition. </summary>
         public bool LazyUpdate { get; set; }
 
+        /// <summary>
+        /// Gets or sets a local offset from the world origin (0,0). This can be used to reduce jitter on
+        /// higher zoom-levels. Note! This value must be set before the layer is Inserted into the map
+        /// </summary>
+        public Point LocalOffset { get; set; }
+
         #region constructor
         /// <summary> Initializes a new instance of the <see cref="ShapeLayer"/> class. By default, the spatial reference system is set to "EPSG:4326". </summary>
         /// <param name="name"> Name of the layer. </param>
@@ -42,7 +47,17 @@ namespace Ptv.XServer.Controls.Map.Layers.Shapes
         {
             SpatialReferenceId = "EPSG:4326";
             InitializeFactory(CanvasCategory.Content,
-             map => map.Name == "Map" ? new ShapeCanvas(map, Shapes, SpatialReferenceId, LazyUpdate) : null);
+                map =>
+                {
+                    if (map.Name != "Map")
+                        return null;
+
+                    var localOffset = (LocalOffset.X != 0 || LocalOffset.Y != 0)
+                        ? GeoTransform.Transform(LocalOffset, SpatialReferenceId, "PTV_MERCATOR")
+                        : new Point(0, 0);
+
+                    return new ShapeCanvas(map, Shapes, SpatialReferenceId, LazyUpdate, true, localOffset);
+                });
         }
         #endregion
     }
@@ -179,8 +194,11 @@ namespace Ptv.XServer.Controls.Map.Layers.Shapes
         /// <param name="shapes"> The shape elements which are to be painted on the canvas. </param>
         /// <param name="spatialReferenceId"> Spatial reference system to which the point of the shapes refer. </param>
         /// <param name="lazyUpdate">The shapes should be updated after viewport end only.</param>
-        public ShapeCanvas(MapView mapView, ObservableCollection<FrameworkElement> shapes, string spatialReferenceId, bool lazyUpdate)
-            : base(mapView)
+        /// <param name="addToMap">The canvas is inserted to the map view immediately.</param>
+        /// <param name="localOffset">The local offset of the shapes.</param>
+        public ShapeCanvas(MapView mapView, ObservableCollection<FrameworkElement> shapes, string spatialReferenceId, bool lazyUpdate, 
+            bool addToMap = true, Point localOffset = new Point())
+            : base(mapView, addToMap, localOffset)
         {
             this.mapView = mapView;
             this.lazyUpdate = lazyUpdate;
@@ -281,7 +299,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Shapes
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void SetProj4Transform(string spatialReferenceId)
         {
-            throw new NotFiniteNumberException();
+            throw new NotImplementedException();
             //var t = CoordinateTransformation.Get(spatialReferenceId, "PTV_MERCATOR");
             //transform = p => PtvMercatorToCanvas(t.Transform(p));
         }
@@ -296,12 +314,13 @@ namespace Ptv.XServer.Controls.Map.Layers.Shapes
             {
                 mapShape.GeoTransform = transform;
 
+                Children.Add(shape);
+
                 if (mapView != null)
                 {
                     mapShape.UpdateShape(mapView, UpdateMode.Refresh, false);
                 }
 
-                Children.Add(shape);
                 return;
             }
 

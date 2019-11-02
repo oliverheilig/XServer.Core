@@ -44,7 +44,10 @@ namespace XServer.Core.Test
             });
 
             // add stuff
-            var myLayer = new ShapeLayer("MyLayer");
+            var myLayer = new ShapeLayer("MyLayer")
+            {                
+                LocalOffset = myLocation // this new property eliminates jitter at deep zoom levels
+            };
             Map.Layers.Add(myLayer);
 
             // add push-pin
