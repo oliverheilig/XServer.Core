@@ -36,6 +36,7 @@ namespace Ptv.XServer.Controls.Map.TileProviders
             try
             {
                 var b = httpClient.GetAsync(url).Result;
+                b.EnsureSuccessStatusCode();
                 return b.Content.ReadAsStreamAsync().Result;
 
             }
