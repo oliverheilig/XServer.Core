@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Ptv.XServer.Controls.Map</RootNamespace>
+    <AssemblyName>Ptv.XServer.Controls.Map</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Aerials.png" />
+    <None Remove="Resources\Background.png" />
+    <None Remove="Resources\Dim_16.png" />
+    <None Remove="Resources\Dim_16_grey.png" />
+    <None Remove="Resources\Eye-open_16.png" />
+    <None Remove="Resources\Eye-open_16_grey.png" />
+    <None Remove="Resources\Labels.png" />
+    <None Remove="Resources\LayerDefault.png" />
+    <None Remove="Resources\Overview.png" />
+    <None Remove="Resources\PlainBackground.png" />
+    <None Remove="Resources\POI.png" />
+    <None Remove="Resources\RoadEditor.png" />
+    <None Remove="Resources\Select_16.png" />
+    <None Remove="Resources\Select_16_grey.png" />
+    <None Remove="Resources\Transport.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Aerials.png" />
+    <Resource Include="Resources\Background.png" />
+    <Resource Include="Resources\Dim_16.png" />
+    <Resource Include="Resources\Dim_16_grey.png" />
+    <Resource Include="Resources\Eye-open_16.png" />
+    <Resource Include="Resources\Eye-open_16_grey.png" />
+    <Resource Include="Resources\Labels.png" />
+    <Resource Include="Resources\LayerDefault.png" />
+    <Resource Include="Resources\Overview.png" />
+    <Resource Include="Resources\PlainBackground.png" />
+    <Resource Include="Resources\POI.png" />
+    <Resource Include="Resources\RoadEditor.png" />
+    <Resource Include="Resources\Select_16.png" />
+    <Resource Include="Resources\Select_16_grey.png" />
+    <Resource Include="Resources\Transport.png" />
+  </ItemGroup>
+
+</Project>
