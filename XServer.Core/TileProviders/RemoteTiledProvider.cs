@@ -3,7 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
+using System.Net.Http;
 using Ptv.XServer.Controls.Map.Layers.Tiled;
 using Ptv.XServer.Controls.Map.Tools;
 
@@ -12,6 +12,8 @@ namespace Ptv.XServer.Controls.Map.TileProviders
     /// <summary> Provider loading tiled bitmaps from a given url. </summary>
     public class RemoteTiledProvider : ITiledProvider
     {
+        public HttpClient httpClient = new HttpClient();
+
         /// <summary> Initializes a new instance of the <see cref="RemoteTiledProvider"/> class. </summary>
         public RemoteTiledProvider()
         {
@@ -33,11 +35,8 @@ namespace Ptv.XServer.Controls.Map.TileProviders
         {
             try
             {
-                var request = (HttpWebRequest) WebRequest.Create(url);
-                request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-                request.KeepAlive = true;
-
-                return request.GetResponse().GetResponseStream();
+                var b = httpClient.GetAsync(url).Result;
+                return b.Content.ReadAsStreamAsync().Result;
 
             }
             catch (Exception exception)
