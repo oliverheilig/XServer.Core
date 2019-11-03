@@ -34,18 +34,11 @@ namespace Ptv.XServer.Controls.Map.TileProviders
         /// <returns> The url content as a stream. </returns>
         public async Task<Stream> ReadURL(string url, CancellationToken ct)
         {
-            try
-            {
                 var b = await httpClient.GetAsync(url, HttpCompletionOption.ResponseContentRead, ct);
                 if (b.StatusCode != System.Net.HttpStatusCode.OK)
                     return null;
                 else
                     return await b.Content.ReadAsStreamAsync();
-            }
-            catch (TaskCanceledException)
-            {
-                return null;
-            }
         }
 
         /// <summary> Gets or sets a method which can be used to build a request. </summary>

@@ -185,7 +185,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                     OnMapSectionStartChange(updateMode);
                     break;
                 case UpdateMode.BeginTransition:
-                    OnMapSectionStartChange(updateMode);
+                    OnMapSectionStartChange(updateMode, true);
                     break;
                 case UpdateMode.WhileTransition:
                     WhileMapSectionChange();
@@ -194,7 +194,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                     if (GetTransitionUpdates != null && !GetTransitionUpdates())
                     {
                         RemoveTilesWithDifferentZoom();
-                        OnMapSectionStartChange(updateMode);
+                        OnMapSectionStartChange(updateMode, true);
                     }
                     OnAnimationFinished();
                     break;
@@ -208,7 +208,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
 
         #region private methods
         /// <summary> Start worker thread for retrieving the tiles from the tile provider. </summary>
-        private async Task GetTiles()
+        private async Task GetTiles(bool delay)
         {
             //StopBackgroundWorker();
 
@@ -234,21 +234,35 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                 foreach (var ttk in tokenstoCancel)
                 {
                     tileTokens[ttk].CancelAfter(250);
-                    tileTokens.Remove(ttk);
                 }
 
                 var tilesToLoad = currentlyVisibleTiles.Except(tileTokens.Keys);
-                foreach(var vt in tilesToLoad)
+                List<Task> tsks = new List<Task>();
+                List<TileParam> ctss = new List<TileParam>();
+                foreach (var vt in tilesToLoad)
                 {
                     var cts = new CancellationTokenSource();
                     tileTokens[vt] = cts;
-                    await LoadImage(vt, cts.Token);
-                    CancellationTokenSource ct;
-                    tileTokens.Remove(vt); //Dispose?
+
+                    ctss.Add(vt);
+                    tsks.Add(LoadImage(vt, delay? 250: 0, cts.Token));
+                }
+
+                try
+                {
+                    await Task.WhenAll(tsks);
+                }
+                finally
+                {
+                    foreach(var ct in ctss)
+                    {
+                        tileTokens[ct].Dispose();
+                        tileTokens.Remove(ct);
+                    }
                 }
             }
         }
-
+        
         private void RemoveTilesWithDifferentZoom()
         {
             var visibleTiles = GetVisibleTiles(new MapParam(MapView, GetTileZoom()))
@@ -342,7 +356,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// Refreshes the tiles which are shown on the canvas. This method is designed to be called at the start of a map section change.
         /// </summary>
         /// <param name="updateMode"> The update mode. This mode tells which kind of change is to be processed by the update call. </param>
-        private void OnMapSectionStartChange(UpdateMode updateMode)
+        private void OnMapSectionStartChange(UpdateMode updateMode, bool delay = false)
         {
             if (((updateMode == UpdateMode.BeginTransition) || (updateMode == UpdateMode.EndTransition)) && !TransitionUpdates) return;
 
@@ -352,7 +366,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                 return;
             }
 
-            GetTiles();
+            GetTiles(delay);
         }
 
         /// <summary>
@@ -628,7 +642,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
 
             if (buffer != null && !ct.IsCancellationRequested)
             {
-                await Dispatcher.BeginInvoke(new Action<byte[], TileParam, bool, bool>(DisplayImage), buffer, tileParam, animate, forceTile);
+                DisplayImage(buffer, tileParam, animate, forceTile);
             }
         }
 
@@ -636,8 +650,11 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// Loads the image of a certain tile and shows it on the canvas. The tile is entered of type object.
         /// </summary>
         /// <param name="stateInfo"> Tile of type object. </param>
-        private async Task LoadImage(object stateInfo, CancellationToken ct)
+        private async Task LoadImage(object stateInfo, int delay, CancellationToken ct)
         {
+            if (delay > 0)
+                await Task.Delay(delay, ct);
+
             var tileParam = stateInfo as TileParam;
             await LoadImage(tileParam, false, ct);
         }

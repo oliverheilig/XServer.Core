@@ -30,18 +30,36 @@ namespace XServer.Core.Test
             // add OSM tiles
             Map.Layers.Add(new TiledLayer("OSM_DE")
             {
-                Caption = "OpenStreetMap.DE",
-                IsBaseMapLayer = true,
-                TiledProvider = new RemoteTiledProvider
-                {
-                    MinZoom = 0,
-                    MaxZoom = 18,
-                    RequestBuilderDelegate = (x, y, level) =>
-                        $"https://{"abc"[(x ^ y) % 3]}.tile.openstreetmap.de/tiles/osmde/{level}/{x}/{y}.png",
-                },
-                Copyright = $"Map © OpenStreetMap contributors",
-                Icon = ResourceHelper.LoadBitmapFromResource("Ptv.XServer.Controls.Map;component/Resources/Background.png")
+               Caption = "OpenStreetMap.DE",
+               IsBaseMapLayer = true,
+               TiledProvider = new RemoteTiledProvider
+               {
+                   MinZoom = 0,
+                   MaxZoom = 18,
+                   RequestBuilderDelegate = (x, y, level) =>
+                       $"https://{"abc"[(x ^ y) % 3]}.tile.openstreetmap.de/tiles/osmde/{level}/{x}/{y}.png",
+               },
+               Copyright = $"Map © OpenStreetMap contributors",
+               Icon = ResourceHelper.LoadBitmapFromResource("Ptv.XServer.Controls.Map;component/Resources/Background.png")
             });
+
+            // add basic xServer tiles
+            // Map.Layers.Add(new TiledLayer("xserver")
+            // {
+            //     Caption = "PTV xServer",
+            //     IsBaseMapLayer = true,
+            //     TiledProvider = new RemoteTiledProvider
+            //     {
+            //         MinZoom = 0,
+            //         MaxZoom = 22,
+            //         RequestBuilderDelegate = (x, y, level) =>
+
+            //         $"https://s0{"1234"[(x ^ y) % 4]}-xserver2-test.cloud.ptvgroup.com/services/rest/XMap/tile/" + 
+            //         $"{level}/{x}/{y}?storedProfile=silkysand&xtok=<your-xserver-internet-token>"
+            //     },
+            //     Copyright = $"Map © OpenStreetMap contributors",
+            //     Icon = ResourceHelper.LoadBitmapFromResource("Ptv.XServer.Controls.Map;component/Resources/Background.png")
+            // });
 
             // add stuff
             var myLayer = new ShapeLayer("MyLayer")
