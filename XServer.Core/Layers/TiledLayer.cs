@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -85,9 +84,6 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
 
         /// <summary> Reference to the tile cache. </summary>
         //private readonly TileCache tileCache = TileCache.GlobalCache;
-
-        /// <summary> The worker thread for fetching the tiles. </summary>
-        private BackgroundWorker worker;
 
         /// <summary> The dictionary for holding the displayed imaged by tile key. </summary>
         private readonly Dictionary<TileParam, Image> shownImages = new Dictionary<TileParam, Image>();
@@ -207,11 +203,8 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         private Dictionary<TileParam, CancellationTokenSource> tileTokens = new Dictionary<TileParam, CancellationTokenSource>();
 
         #region private methods
-        /// <summary> Start worker thread for retrieving the tiles from the tile provider. </summary>
         private async Task GetTiles(bool delay)
         {
-            //StopBackgroundWorker();
-
             var mapParam = new MapParam(MapView, GetTileZoom());
 
             currentlyVisibleTiles = new HashSet<TileParam>(GetVisibleTiles(mapParam));
@@ -450,43 +443,6 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         }
 
         /// <summary>
-        /// Event handler which is called when the worker starts its work. Loads the tile images.
-        /// </summary>
-        /// <param name="sender"> Sender of the DoWork event. </param>
-        /// <param name="e"> Event parameters. </param>
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            if (!(e.Argument is IEnumerable<TileParam> tileParams)) return;
-
-            List<Task> tasks = new List<Task>();
-            foreach (var tileParam in tileParams)
-            {
-                if (((BackgroundWorker)sender).CancellationPending)
-                {
-                    e.Result = null;
-                    //cts.Cancel();
-                    return;
-                }
-
-                //tasks.Add(LoadImage(tileParam, cts.Token));
-                
-                //if (UseThreading)
-                //{
-                //    Task.Run(() => LoadImage(tileParam));
-                //    // new Thread(new ParameterizedThreadStart(LoadImage)).Start(tile);
-                //    //ThreadPool.QueueUserWorkItem(new WaitCallback(LoadImage), new object[] { tileParam });
-                //    //threadPool.PostRequest(new Action<TileParam>(LoadImage), new object[] { tileParam });
-                //}
-                //else
-                //{
-                //    LoadImage(tileParam); // single threaded for debugging
-                //}
-            }
-
-//            Task.WaitAll(tasks.ToArray(), cts.Token);
-        }
-
-        /// <summary>
         /// Displays the image of a certain tile on the canvas.
         /// </summary>
         /// <param name="buffer"> The bytes for holding the image. </param>
@@ -610,6 +566,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
             //catch { return null; } // should handle web exception gracefully here 
             //finally { if(useTileCache) tileCache.UnlockKey(cacheKey); }
         }
+
         /// <summary>
         /// Loads an image of a certain tile and shows it on the canvas.
         /// </summary>

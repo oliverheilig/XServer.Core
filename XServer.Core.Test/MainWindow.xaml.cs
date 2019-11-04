@@ -57,7 +57,7 @@ namespace XServer.Core.Test
             //         $"https://s0{"1234"[(x ^ y) % 4]}-xserver2-test.cloud.ptvgroup.com/services/rest/XMap/tile/" + 
             //         $"{level}/{x}/{y}?storedProfile=silkysand&xtok=<your-xserver-internet-token>"
             //     },
-            //     Copyright = $"Map © OpenStreetMap contributors",
+            //     Copyright = $"© PTV, HERE",
             //     Icon = ResourceHelper.LoadBitmapFromResource("Ptv.XServer.Controls.Map;component/Resources/Background.png")
             // });
 
