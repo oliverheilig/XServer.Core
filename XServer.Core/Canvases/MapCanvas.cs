@@ -285,7 +285,7 @@ namespace Ptv.XServer.Controls.Map.Canvases
         /// <inheritdoc/>  
         public override Point CanvasToPtvMercator(Point canvasPoint)
         {
-            return new Point(canvasPoint.X + localOffset.X, -canvasPoint.Y - localOffset.Y);
+            return new Point(canvasPoint.X + localOffset.X, -canvasPoint.Y + localOffset.Y);
         }
 
         /// <inheritdoc/>  
