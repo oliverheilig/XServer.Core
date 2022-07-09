@@ -18,6 +18,8 @@ namespace XServer.Core.Test
     {
         public MainWindow()
         {
+            System.Net.ServicePointManager.DefaultConnectionLimit = 8;
+
             InitializeComponent();
         }
 
