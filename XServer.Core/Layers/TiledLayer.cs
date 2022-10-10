@@ -238,7 +238,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                     tileTokens[vt] = cts;
 
                     ctss.Add(vt);
-                    tsks.Add(LoadImage(vt, delay? 250: 0, cts.Token));
+                    tsks.Add(LoadImage(vt, delay ? 250 : 0, cts.Token));
                 }
 
                 try
@@ -349,7 +349,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// Refreshes the tiles which are shown on the canvas. This method is designed to be called at the start of a map section change.
         /// </summary>
         /// <param name="updateMode"> The update mode. This mode tells which kind of change is to be processed by the update call. </param>
-        private void OnMapSectionStartChange(UpdateMode updateMode, bool delay = false)
+        private async void OnMapSectionStartChange(UpdateMode updateMode, bool delay = false)
         {
             if (((updateMode == UpdateMode.BeginTransition) || (updateMode == UpdateMode.EndTransition)) && !TransitionUpdates) return;
 
@@ -359,7 +359,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                 return;
             }
 
-            GetTiles(delay);
+            await GetTiles(delay);
         }
 
         /// <summary>
@@ -609,11 +609,21 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
         /// <param name="stateInfo"> Tile of type object. </param>
         private async Task LoadImage(object stateInfo, int delay, CancellationToken ct)
         {
-            if (delay > 0)
-                await Task.Delay(delay, ct);
+            try
+            {
+                if(ct.IsCancellationRequested) return;
 
-            var tileParam = stateInfo as TileParam;
-            await LoadImage(tileParam, false, ct);
+                if (delay > 0)
+                    await Task.Delay(delay, ct);
+
+                var tileParam = stateInfo as TileParam;
+
+                if(ct.IsCancellationRequested) return;
+
+                await LoadImage(tileParam, false, ct);
+            }
+            catch(OperationCanceledException)
+            {}
         }
         #endregion
 
