@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/XServer.Core.Test/bin/Debug/netcoreapp3.0/XServer.Core.Test.dll",
+            "program": "${workspaceFolder}/XServer.Core.Test/bin/Debug/net6.0-windows/XServer.Core.Test.exe",
             "args": [],
             "cwd": "${workspaceFolder}/XServer.Core.Test",
             "console": "internalConsole",
