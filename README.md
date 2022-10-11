@@ -9,5 +9,5 @@ What's missing:
 
 * Projections-Library - only supports WGS84 (Longitude, Latitude) and (Web-)Mercator.
 * WMTS layer - although WMS supporting WebMercator (EPSG:3857) can be used.
-* FormsMap - but ElemenHost can be used to add it to a WinForms applications.
-* "native" xServer support - xServer1/2 can be added via the WMS / tile api.
+* FormsMap - but ElemenHost can be used embed into a WinForms application.
+* "native" xServer support - xServer1/2 can be added via the WMS / tile api though.
