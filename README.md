@@ -7,8 +7,7 @@ This is a stripped-down version of https://github.com/ptv-logistics/xserver.net 
 
 What's missing:
 
-* Projections-Library, only supports WGS84 (Longitude, Latitude) 
-* FormsMap
-* WMTS layer
-* Everything with GDI
-* Everything with PTV xServer
+* Projections-Library - only supports WGS84 (Longitude, Latitude) and (Web-)Mercator.
+* WMTS layer - although WMS supporting WebMercator (EPSG:3857) can be used.
+* FormsMap - but ElemenHost can be used to add it to a WinForms applications.
+* "native" xServer support - xServer1/2 can be added via the WMS / tile api.
