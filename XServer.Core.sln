@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XServer.Core", "XServer.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XServer.Core.Test", "XServer.Core.Test\XServer.Core.Test.csproj", "{DB937B8D-375D-4BD4-8AA8-76791804DADB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XMap1Test", "XMap1Test\XMap1Test.csproj", "{6BBC2965-8C97-476A-9763-60119FD7DDBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XMap1Test", "XMap1Test\XMap1Test.csproj", "{6BBC2965-8C97-476A-9763-60119FD7DDBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PtvDeveloperTest", "PtvDeveloperTest\PtvDeveloperTest.csproj", "{7A9E1C9C-1A71-4C56-B9DA-3CBC31D9CEDC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{6BBC2965-8C97-476A-9763-60119FD7DDBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BBC2965-8C97-476A-9763-60119FD7DDBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BBC2965-8C97-476A-9763-60119FD7DDBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A9E1C9C-1A71-4C56-B9DA-3CBC31D9CEDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A9E1C9C-1A71-4C56-B9DA-3CBC31D9CEDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A9E1C9C-1A71-4C56-B9DA-3CBC31D9CEDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A9E1C9C-1A71-4C56-B9DA-3CBC31D9CEDC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

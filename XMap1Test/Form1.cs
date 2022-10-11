@@ -13,6 +13,8 @@ namespace XMap1Test
 {
     public partial class Form1 : Form
     {
+        private static readonly string token = ""; // Your xserver-internet token;
+
         public Form1()
         {
             InitializeComponent();
@@ -20,6 +22,13 @@ namespace XMap1Test
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(token))
+            {
+                MessageBox.Show("You need an xserver-internet token to run this sample.");
+                Application.ExitThread();
+                return;
+            }
+
             // Create the ElementHost control for hosting the
             // WPF UserControl.
             ElementHost host = new ElementHost();
@@ -53,7 +62,6 @@ namespace XMap1Test
             });
 
             // -fg layers require the xServer-internet token
-            var token = "<your xServer internet token>";
             map.Layers.Add(new UntiledLayer("Labels")
             {
                 UntiledProvider = new WmsUntiledProvider(
