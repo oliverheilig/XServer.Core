@@ -226,7 +226,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Tiled
                 tokenstoCancel.ExceptWith(currentlyVisibleTiles.ToList());
                 foreach (var ttk in tokenstoCancel)
                 {
-                    tileTokens[ttk].CancelAfter(250);
+                    //tileTokens[ttk].CancelAfter(250);
                 }
 
                 var tilesToLoad = currentlyVisibleTiles.Except(tileTokens.Keys);

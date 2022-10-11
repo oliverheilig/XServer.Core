@@ -18,6 +18,8 @@ using Environment = System.Environment;
 using Timer = System.Threading.Timer;
 using Image = System.Windows.Controls.Image;
 using Point = System.Windows.Point;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Ptv.XServer.Controls.Map.Layers.Untiled
 {
@@ -32,7 +34,7 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
         /// <param name="width"> Width in pixel of the bitmap. </param>
         /// <param name="height"> Height in pixel of the bitmap. </param>
         /// <returns> Stream containing the bitmap. </returns>
-        Stream GetImageStream(double left, double top, double right, double bottom, int width, int height);
+        Task<Stream> GetImageStream(double left, double top, double right, double bottom, int width, int height, CancellationToken ct);
     }
 
     /// <summary> Returns a bitmap for a PTV_Mercator rectangle. </summary>
@@ -226,12 +228,6 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
         /// <inheritdoc/>
         public override void Dispose()
         {
-            if (worker != null)
-            {
-                worker.CancelAsync();
-                worker.DoWork -= Worker_DoWork;
-            }
-
             Children.Remove(mapImage);
             base.Dispose();
         }
@@ -324,23 +320,15 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
         /// <param name="mapParam">Map parameters (map section and image size)</param>
         /// <param name="mapObjects"> Set of map objects. </param>
         /// <returns>The bytes of the encoded map image.</returns>
-        private byte[] GetImageBytes(MapParam mapParam, out IEnumerable<IMapObject> mapObjects)
+        private async Task<byte[]> GetImageBytes(MapParam mapParam, CancellationToken ct)
         {
-            mapObjects = null;
             MapParam reqParam = mapParam.Scale(untiledProvider as ITiledProvider);
 
             if (!reqParam.IsSizeInRange(new Size(32, 32), MaxRequestSize))
                 return null;
 
-            Stream stream;
-            if (untiledProvider is IUntiledProviderWithMapObjects untiledProviderWithMapObjects)
-                stream = untiledProviderWithMapObjects.GetImageStreamAndMapObjects(
-                    reqParam.Left, reqParam.Top, reqParam.Right, reqParam.Bottom,
-                    (int)reqParam.Width, (int)reqParam.Height,
-                    out mapObjects);
-            else
-                stream = untiledProvider.GetImageStream(reqParam.Left, reqParam.Top, reqParam.Right, reqParam.Bottom,
-                    (int)reqParam.Width, (int)reqParam.Height);
+            Stream stream = await untiledProvider.GetImageStream(reqParam.Left, reqParam.Top, reqParam.Right, reqParam.Bottom,
+                    (int)reqParam.Width, (int)reqParam.Height, ct);
 
             using (stream)
             {
@@ -357,13 +345,11 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
         /// <summary> Event handler which is called when the worker starts its work. Loads and displays the map image. </summary>
         /// <param name="sender"> Sender of the DoWork event. </param>
         /// <param name="e"> Event parameters. </param>
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        private async void Worker_DoWork(MapParam mapParam, CancellationToken ct)
         {
             try
             {
-                var mapParam = (MapParam)e.Argument;
-
-                Dispatcher.BeginInvoke(new Action<byte[], IEnumerable<IMapObject>, MapParam>(DisplayImage), GetImageBytes(mapParam, out var mapObjects), mapObjects, mapParam);
+                DisplayImage(await GetImageBytes(mapParam, ct), null, mapParam);
             }
             catch (Exception)
             {
@@ -407,15 +393,17 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
                 mapImage.Source = bitmapImage;
             }
 
-            UpdateMapObjects?.Invoke(mapObjects, new Size(mapParam.Width, mapParam.Height));
+            UpdateMapObjects?.Invoke(null, new Size(mapParam.Width, mapParam.Height));
         }
 
         /// <summary>Callback for a provider object to set the map objects which belong to a requested map image. </summary>
         public Action<IEnumerable<IMapObject>, Size> UpdateMapObjects { get; set; }
 
+        CancellationTokenSource ct = null;
+
         /// <summary> Updates the overlay image. </summary>
         /// <param name="forceUpdate"> True, if the update should be forced even if the viewport didn't change. </param>
-        private void UpdateOverlay(bool forceUpdate)
+        private async void UpdateOverlay(bool forceUpdate)
         {
             if (timer != null)
             {
@@ -432,12 +420,10 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
             lastParam = mapParam;
             mapParam.Index = ++index;
 
-            if (worker != null)
-            {
-                worker.CancelAsync();
-                worker.DoWork -= Worker_DoWork;
-                worker = null;
-            }
+            //if (ct != null)
+            //    ct.CancelAfter(250);
+
+            ct = new CancellationTokenSource();
 
             if (mapParam.Width < 32 || mapParam.Height < 32 || MinLevel > MapView.FinalZoom)
             {
@@ -447,18 +433,14 @@ namespace Ptv.XServer.Controls.Map.Layers.Untiled
 
             if (!MapView.Printing)
             {
-                worker = new BackgroundWorker();
-                worker.DoWork += Worker_DoWork;
-                worker.WorkerSupportsCancellation = true;
-
-                worker.RunWorkerAsync(mapParam);
+                Worker_DoWork(mapParam, ct.Token);
             }
             else
             {
                 try
                 {
-                    var bytes = GetImageBytes(mapParam, out var mapObjects);
-                    DisplayImage(bytes, mapObjects, mapParam);
+                    var bytes = await GetImageBytes(mapParam, ct.Token);
+                    DisplayImage(bytes, null, mapParam);
                 }
                 catch
                 {

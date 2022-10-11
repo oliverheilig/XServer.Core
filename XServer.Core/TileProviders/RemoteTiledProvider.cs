@@ -40,7 +40,7 @@ namespace Ptv.XServer.Controls.Map.TileProviders
                 if (b.StatusCode != System.Net.HttpStatusCode.OK)
                     return null;
                 else
-                    return await b.Content.ReadAsStreamAsync();
+                    return await b.Content.ReadAsStreamAsync(ct);
             }
             catch(OperationCanceledException)
             {
