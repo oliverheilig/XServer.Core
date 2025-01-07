@@ -1,7 +1,7 @@
 # XServer.Core
 A slippy map for .NET Core, based on PTV xServer.NET
 
-![screenshot](https://raw.githubusercontent.com/XServer.Core/d42e7b0e5bc92e86a2db6890ec796ba12fc7a87b/Screenshot.jpg)
+![screenshot](https://raw.githubusercontent.com/oliverheilig/XServer.Core/master/Screenshot.jpg)
 
 This is a stripped-down version of https://github.com/ptv-logistics/xserver.net which runs on .NET Core WPF. 
 
